@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+<suite name="Test Suite" parallel="tests" data-provider-thread-count="3" thread-count="3" allow-return-values="true">
+    <listeners>
+        <listener class-name="listener.AnnotationTransformer"/>
+    </listeners>
+    <test name="Chrome Test">
+        <parameter name="browser" value="chrome"></parameter>
+        <classes>
+            <class name="runners.TestRunner"></class>
+            <!--            <class name="runners.forgotPassword.SendForgotPasswordMailRunner"></class>-->
+            <!--            <class name="runners.forgotPassword.ForgotPasswordRunner"></class>-->
+        </classes>
+    </test>
+</suite>
