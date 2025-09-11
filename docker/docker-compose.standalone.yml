@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  # ---------------------------------
+  # Standalone Chrome (Hub + Node in 1 container)
+  # ---------------------------------
+  chrome:
+    image: selenium/standalone-chrome:4.22.0
+    shm_size: 2gb   # Prevents Chrome crashes (due to limited /dev/shm in Docker)
+    ports:
+      # Replace with the ports you want to expose on your system
+      - "port3"   # WebDriver endpoint (http://localhost:port3/wd/hub)
+      - "port4"   # VNC access (http://localhost:port4) - optional

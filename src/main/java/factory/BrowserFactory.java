@@ -16,21 +16,48 @@ import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.safari.SafariOptions;
 import utils.PropertiesReader;
 
+/**
+ * BrowserFactory
+ *
+ * Enum-based factory for creating WebDriver instances per browser type.
+ * Supported browsers: CHROME, FIREFOX, EDGE, SAFARI.
+ *
+ * Responsibilities:
+ *  - Encapsulates browser-specific WebDriver creation logic.
+ *  - Provides customized Options (ChromeOptions, FirefoxOptions, etc.).
+ *  - Handles headless mode support (enabled where possible, blocked otherwise).
+ *
+ * Usage:
+ *   BrowserFactory.CHROME.createDriver();
+ *   BrowserFactory.FIREFOX.getOptions();
+ */
 public enum BrowserFactory {
+
+    // -------------------------------
+    // Chrome Browser
+    // -------------------------------
     CHROME {
         @Override
         public WebDriver createDriver() {
-//            WebDriverManager.chromedriver().browserInDocker().enableRecording();
-            SeleniumManager.getInstance().getDriverPath(CHROME.getOptions(),false);
-//            WebDriverManager.getInstance(DriverManagerType.CHROME).setup();
-//            System.setProperty("webdriver.chrome.driver","driver/chromedriver");
+            // Option 1: run ChromeDriver in Docker with recording (commented)
+            // WebDriverManager.chromedriver().browserInDocker().enableRecording();
+
+            // Option 2: let SeleniumManager handle driver path resolution
+            SeleniumManager.getInstance().getDriverPath(CHROME.getOptions(), false);
+
+            // Option 3: use WebDriverManager setup (commented)
+            // WebDriverManager.getInstance(DriverManagerType.CHROME).setup();
+
+            // Option 4: manual driver path (commented)
+            // System.setProperty("webdriver.chrome.driver","driver/chromedriver");
+
             return new ChromeDriver(getOptions());
         }
 
-        //        @Override
+        @Override
         public ChromeOptions getOptions() {
             ChromeOptions chromeOptions = new ChromeOptions();
-//            chromeOptions.addArguments("auto-open-devtools-for-tabs");
+            // Common arguments to improve stability / disable unwanted UI
             chromeOptions.addArguments("--disable-infobars");
             chromeOptions.addArguments("'--ignore-gpu-blocklist'");
             chromeOptions.addArguments("--disable-notifications");
@@ -39,7 +66,9 @@ public enum BrowserFactory {
             chromeOptions.addArguments("--incognito");
             chromeOptions.addArguments("--allow-insecure-localhost");
             chromeOptions.addArguments("--remote-allow-origins=*");
-            if(PropertiesReader.getParameter("headless").equalsIgnoreCase("true")){
+
+            // Headless configuration if enabled in properties
+            if (PropertiesReader.getParameter("headless").equalsIgnoreCase("true")) {
                 chromeOptions.addArguments("--headless=new");
                 chromeOptions.addArguments("--disable-gpu");
                 chromeOptions.addArguments("--window-size=1920,1080");
@@ -49,31 +78,39 @@ public enum BrowserFactory {
             }
             return chromeOptions;
         }
-
     },
 
+    // -------------------------------
+    // Firefox Browser
+    // -------------------------------
     FIREFOX {
         @Override
         public WebDriver createDriver() {
             WebDriverManager.getInstance(DriverManagerType.FIREFOX).setup();
-//            SeleniumManager.getInstance().getDriverPath(FIREFOX.getOptions(), false);
+            // SeleniumManager alternative (commented)
+            // SeleniumManager.getInstance().getDriverPath(FIREFOX.getOptions(), false);
             return new FirefoxDriver(getOptions());
         }
 
         @Override
         public FirefoxOptions getOptions() {
             FirefoxOptions firefoxOptions = new FirefoxOptions();
-            if(PropertiesReader.getParameter("headless").equalsIgnoreCase("true")){
+            if (PropertiesReader.getParameter("headless").equalsIgnoreCase("true")) {
                 firefoxOptions.addArguments("--headless");
             }
             return firefoxOptions;
         }
     },
+
+    // -------------------------------
+    // Edge Browser
+    // -------------------------------
     EDGE {
         @Override
         public WebDriver createDriver() {
             WebDriverManager.getInstance(DriverManagerType.EDGE).setup();
-//            SeleniumManager.getInstance().getDriverPath(EDGE.getOptions(),false);
+            // SeleniumManager alternative (commented)
+            // SeleniumManager.getInstance().getDriverPath(EDGE.getOptions(), false);
             return new EdgeDriver(getOptions());
         }
 
@@ -81,15 +118,20 @@ public enum BrowserFactory {
         public EdgeOptions getOptions() {
             EdgeOptions edgeOptions = new EdgeOptions();
             edgeOptions.addArguments("--start-maximized");
-//            not supported headless on edge in the selenium 4.18.1
-//            edgeOptions.setHeadless(Boolean.parseBoolean(PropertiesReader.getParameter("headless")));
+
+            // NOTE: Selenium 4.18.1 does not support Edge headless properly
+            // edgeOptions.setHeadless(Boolean.parseBoolean(PropertiesReader.getParameter("headless")));
             return edgeOptions;
         }
     },
+
+    // -------------------------------
+    // Safari Browser
+    // -------------------------------
     SAFARI {
         @Override
         public WebDriver createDriver() {
-//            WebDriverManager.getInstance(DriverManagerType.SAFARI).setup();
+            // WebDriverManager not commonly used for Safari, rely on SeleniumManager
             SeleniumManager.getInstance().getDriverPath(SAFARI.getOptions(), false);
             return new SafariDriver(getOptions());
         }
@@ -98,13 +140,26 @@ public enum BrowserFactory {
         public SafariOptions getOptions() {
             SafariOptions safariOptions = new SafariOptions();
             safariOptions.setAutomaticInspection(false);
+
+            // Safari does not support headless mode
             if (PropertiesReader.getParameter("headless").equalsIgnoreCase("true"))
                 throw new HeadlessNotSupportedException(safariOptions.getBrowserName());
+
             return safariOptions;
         }
     };
 
+    // -------------------------------
+    // Abstract methods to be implemented by each browser
+    // -------------------------------
+
+    /**
+     * Creates a new WebDriver instance for the browser type.
+     */
     public abstract WebDriver createDriver();
 
+    /**
+     * Returns browser-specific Options object (e.g., ChromeOptions).
+     */
     public abstract AbstractDriverOptions<?> getOptions();
 }

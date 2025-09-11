@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  # -------------------------------
+  # Selenium Hub (Central Controller)
+  # -------------------------------
+  selenium-hub:
+    image: selenium/hub:4.22.0
+    container_name: selenium-hub
+    ports:
+      # Replace these with the ports you want to expose on your system
+      - "port1:4442"   # Event bus publish port (internal use by nodes)
+      - "port2:4443"   # Event bus subscribe port (internal use by nodes)
+      - "port3:4444"   # WebDriver endpoint (http://localhost:port3/wd/hub)
+
+  # -------------------------------
+  # Chrome Node
+  # -------------------------------
+  chrome:
+    image: selenium/node-chrome:4.22.0
+    shm_size: 2gb   # Prevents Chrome crashes (due to limited /dev/shm in Docker)
+    depends_on: [selenium-hub]   # Hub must start before this node
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub   # Connect node to hub by service name
+      - SE_EVENT_BUS_PUBLISH_PORT=4442   # Must match selenium-hub mapping
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    ports:
+      # Optional: map to a custom port if you want to access VNC
+      - "port4:7900"   # VNC access (http://localhost:port4) - optional
+
+  # -------------------------------
+  # Firefox Node
+  # -------------------------------
+  firefox:
+    image: selenium/node-firefox:4.22.0
+    shm_size: 2gb   # Prevents Firefox crashes
+    depends_on: [selenium-hub]   # Hub must start before this node
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443

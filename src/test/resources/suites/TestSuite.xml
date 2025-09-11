@@ -8,8 +8,7 @@
         <parameter name="browser" value="chrome"></parameter>
         <classes>
             <class name="runners.TestRunner"></class>
-            <!--            <class name="runners.forgotPassword.SendForgotPasswordMailRunner"></class>-->
-            <!--            <class name="runners.forgotPassword.ForgotPasswordRunner"></class>-->
+
         </classes>
     </test>
 </suite>
