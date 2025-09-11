@@ -31,7 +31,7 @@ You can contribute in multiple ways:
 
 1. **Fork** the repository to your GitHub account.
 2. **Clone** your fork locally:
-
+```bash
 git clone https://github.com/metin-5115/Selenium-substructure.git
 
 cd Selenium-substructure
@@ -53,3 +53,4 @@ git add .                                                # Stage all changes
 git commit -m "Fix: your message"   # Commit with a clear message example :Add, Fix, Refactor, Docs
 
 git push origin feature/yeni-ozellik
+---
