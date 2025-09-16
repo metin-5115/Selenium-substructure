@@ -2,13 +2,20 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 <suite name="Test Suite" parallel="tests" data-provider-thread-count="3" thread-count="3" allow-return-values="true">
     <listeners>
-        <listener class-name="listener.AnnotationTransformer"/>
+        <listener class-name="listener.DynamicParallelAlterer"/>
+
     </listeners>
     <test name="Chrome Test">
-        <parameter name="browser" value="chrome"></parameter>
+        <parameter name="CPU_PERCENT"   value="30"/>  <!-- İstediğin: %30 -->
+        <parameter name="IO_FACTOR"     value="2"/>   <!-- I/O ağırlık (2..3) -->
+        <parameter name="MAX_THREADS"   value="0"/>   <!-- 0 = sınırsız -->
+        <parameter name="BROWSER_LIMIT" value="4"/>   <!-- Aynı anda en çok 4 tarayıcı -->
+        <parameter name="INIT_LIMIT" value="2"/>
+        <parameter name="browser" value="chrome"/>
         <classes>
             <class name="runners.TestRunner"></class>
-
+            <!--            <class name="runners.forgotPassword.SendForgotPasswordMailRunner"></class>-->
+            <!--            <class name="runners.forgotPassword.ForgotPasswordRunner"></class>-->
         </classes>
     </test>
 </suite>
