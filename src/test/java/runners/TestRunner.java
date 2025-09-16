@@ -12,6 +12,7 @@ import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.testng.annotations.*;
 import utils.PropertiesReader;
+import listener.DynamicParallelAlterer;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,94 +34,66 @@ import java.io.IOException;
  */
 
 @CucumberOptions(
-        features = "src/test/java/features",                          // Feature file root directory
-        glue = {"stepDefinitions","hook"},                             // Step defs + hooks packages
-        tags = "",                                                     // Optional: filter scenarios by tags (e.g., "@reservation")
-        plugin = {"com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"} // Extent Reports adapter
+        features = "src/test/java/features",
+        glue = {"stepDefinitions","hook"},
+        // tags'ı buradan kaldırdık; CLI: -Dcucumber.filter.tags="..."
+        plugin = {"com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"}
 )
-@Listeners(ResultListener.class)                                       // Attach custom TestNG listener
-public class TestRunner{
-    private TestNGCucumberRunner testNGCucumberRunner;                 // Bridges Cucumber with TestNG
+@Listeners({ResultListener.class, DynamicParallelAlterer.class})
+public class TestRunner {
 
-    /**
-     * Runs once before the entire suite.
-     * Sets the base folder for Extent report output depending on environment.
-     */
-    @BeforeSuite
-    public void setUpSuite(){
-        System.setProperty(
-                "basefolder.name",
-                "test-reports" + File.separator + PropertiesReader.getParameter("environment") + File.separator
-        );
+    private TestNGCucumberRunner testNGCucumberRunner;
+
+    @BeforeSuite(alwaysRun = true)
+    public void suiteStart(){
+        System.setProperty("basefolder.name",
+                "test-reports" + File.separator + PropertiesReader.getParameter("environment") + File.separator);
+
+        // yalnızca bilgi amaçlı log — gerçek thread sayısı DynamicParallelAlterer tarafından set ediliyor
+        String threads = System.getProperty("threads", "<dynamic-by-alterer>");
+        String gridUrl = System.getProperty("gridUrl", "");
+        String browser = System.getProperty("browser", "chrome");
+        System.out.printf("[INFO] suite start | threads:%s | browser:%s | grid:%s%n",
+                threads, browser, gridUrl.isEmpty() ? "LOCAL" : gridUrl);
     }
 
-    /**
-     * Runs once before any test methods in this class.
-     * Initializes the TestNGCucumberRunner with this test class context.
-     */
     @BeforeClass(alwaysRun = true)
     public void setUpCucumber() {
         testNGCucumberRunner = new TestNGCucumberRunner(this.getClass());
     }
 
-    /**
-     * Runs before each test method (each scenario execution).
-     * Creates a WebDriver instance for the given browser and stores it in a ThreadLocal (DriverFactory).
-     * Also stores the browser name in ThreadFactory for logging/routing purposes.
-     *
-     * @param browser passed from TestNG (e.g., via testng.xml or -Dbrowser=chrome)
-     */
     @BeforeMethod(alwaysRun = true)
-    @Parameters({ "browser"})
-    public synchronized void setUpClass(String browser) {
-        new DriverFactory().setDriver(new TargetFactory().createInstance(browser)); // Create and bind driver to current thread
-        ThreadFactory.setBrowserInfo(browser);                                      // Save browser info for logs
+    @Parameters({ "browser" })
+    public void beforeMethod(@Optional("chrome") String browser){
+        // Driver init Hook'ta yapılıyor; burada sadece chosen browser'ı publish ediyoruz
+        System.setProperty("browser", browser);
+        System.out.printf("[INFO] test method start | thread:%s | browser:%s%n",
+                Thread.currentThread().getId(), browser);
     }
 
-    /**
-     * Executes a single Cucumber scenario provided by the DataProvider.
-     * Each row from scenarios() corresponds to one scenario run.
-     */
     @Test(groups = "cucumber", description = "Runs Cucumber Scenarios", dataProvider = "scenarios")
     public void runScenario(PickleWrapper pickleWrapper, FeatureWrapper featureWrapper) {
         testNGCucumberRunner.runScenario(pickleWrapper.getPickle());
     }
 
-    /**
-     * Supplies scenarios to the test method.
-     * parallel = true → allows multiple scenarios to run concurrently.
-     */
     @DataProvider(parallel = true)
     public Object[][] scenarios() {
         return testNGCucumberRunner.provideScenarios();
     }
 
-    /**
-     * Runs once after all test methods in this class.
-     * Finalizes/flushes the Cucumber-TestNG runner.
-     * (Commented examples below show where post-processing/export logic could be placed.)
-     */
     @AfterClass(alwaysRun = true)
     public void tearDownClass() {
         testNGCucumberRunner.finish();
-//        HotelDestination.checkHotelDestination();
-//        new WriteDataToExcel().writePageErrorsToExcel(paymentErrors, getDate(0,"dd-MM-yyyy HH-mm") +"-payment-errors");
-//        new WriteDataToExcel().writePageErrorsToExcel(hotelListErrors, Helper.getDate(0,"dd-MM-yyyy HH-mm") +"-hotel-list-errors");
     }
 
-    /**
-     * Runs once after the entire suite finishes.
-     * Deletes the screenshots directory (if exists) to keep workspace clean between runs.
-     */
     @AfterSuite(alwaysRun = true)
-    public void tearDownSuite(){
+    public void suiteEnd(){
+        // screenshot klasörünü temizle (senin mevcut davranışın)
         String destination = new File(System.getProperty("user.dir")+"/screenshots").getAbsolutePath();
         if (new File(destination).exists()) {
-            try {
-                FileUtils.deleteDirectory(new File(destination));      // Remove screenshots directory
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            try { FileUtils.deleteDirectory(new File(destination)); }
+            catch (IOException e) { throw new RuntimeException(e); }
         }
+        System.out.println("[INFO] suite end");
     }
 }
