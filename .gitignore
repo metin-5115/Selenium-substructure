@@ -27,9 +27,9 @@ target/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
-pages/
-features/
-stepsdefinitions/
+**/pages/
+**/stepDefinitions/
+**/features/
 ### VS Code ###
 .vscode/
 
